@@ -86,12 +86,13 @@ genz_suffix = [
 
 email_domains = ["@gmail.com", "@yahoo.com", "@company.com", "@test.local"]
 
+# =======================
+# RANDOM GENERATORS
+# =======================
 
-# FIXED → password tanpa punctuation
 def random_password():
-    chars = string.ascii_letters + string.digits  # tanpa punctuation
+    chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for _ in range(10))
-
 
 def random_date(start_year=2020, end_year=2025):
     start = datetime(start_year, 1, 1)
@@ -99,11 +100,9 @@ def random_date(start_year=2020, end_year=2025):
     delta = end - start
     return (start + timedelta(days=random.randint(0, delta.days))).strftime("%Y-%m-%d")
 
-
 def generate_fullname(names):
     length = random.choice([2, 3])
     return " ".join(random.sample(names, length))
-
 
 def random_username(base_name):
     if random.random() < 0.5:
@@ -112,6 +111,41 @@ def random_username(base_name):
     num = str(random.randint(1, 999)) if random.random() < 0.4 else ""
     return f"{base_name.lower()}{suffix}{num}"
 
+# =====================================================
+# FIX: UNIQUE USERNAME & UNIQUE EMAIL CHECK
+# =====================================================
+
+used_fullnames = set()
+used_usernames = set()
+used_emails = set()
+
+def unique_username(base_name):
+    username = random_username(base_name)
+
+    # kalo masih unik, langsung gas
+    if username not in used_usernames:
+        used_usernames.add(username)
+        return username
+
+    # kalo duplikat, kasih angka
+    count = 1
+    while True:
+        candidate = f"{username}{count}"
+        if candidate not in used_usernames:
+            used_usernames.add(candidate)
+            return candidate
+        count += 1
+
+def unique_email(username):
+    while True:
+        email = username + random.choice(email_domains)
+        if email not in used_emails:
+            used_emails.add(email)
+            return email
+
+# =======================
+# PROGRAM
+# =======================
 
 print("Pilih gender nama:")
 print("1. Laki-laki")
@@ -126,9 +160,9 @@ start_id = int(input("Mulai dari ID berapa: "))
 print("\nGenerating...\n")
 
 rows = []
-used_fullnames = set()
 
 for i in range(total):
+    # fullname unik
     while True:
         fullname = generate_fullname(nama_list)
         if fullname not in used_fullnames:
@@ -136,21 +170,27 @@ for i in range(total):
             break
 
     first_name = fullname.split()[0].lower()
-    username = random_username(first_name)
-    email = username + random.choice(email_domains)
-    password = random_password()
 
+    # username unik
+    username = unique_username(first_name)
+
+    # email unik
+    email = unique_email(username)
+
+    password = random_password()
     created_at = random_date()
-    updated_at = random_date() if random.random() < 0.5 else "NULL"
-    deleted_at = random_date() if random.random() < 0.2 else "NULL"
+    updated_at = random_date() if random.random() < 0.5 else None
+    deleted_at = random_date() if random.random() < 0.2 else None
 
     row = (
         f"({start_id + i}, '{username}', '{email}', '{password}', "
         f"'{fullname}', '{created_at}', "
-        f"{ 'NULL' if updated_at=='NULL' else f'\"{updated_at}\"' }, "
-        f"{ 'NULL' if deleted_at=='NULL' else f'\"{deleted_at}\"' }),"
+        f"{'NULL' if updated_at is None else f'\"{updated_at}\"'}, "
+        f"{'NULL' if deleted_at is None else f'\"{deleted_at}\"'}),"
     )
+
     rows.append(row)
 
+# print hasil
 print("\n".join(rows))
-print(f"\nDone there are {total} rows generated.")
+print(f"\nDone bro 😎🔥 Total rows printed: {total}")
